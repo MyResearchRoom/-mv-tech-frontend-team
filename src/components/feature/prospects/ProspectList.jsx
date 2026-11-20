@@ -8,6 +8,8 @@ import {
   FileText,
   ClipboardList,
   Eye,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 
 import TableComponent from '@/components/common/tableComponent';
@@ -18,9 +20,7 @@ const LIMIT = 10;
 const getStatusStyle = (status) => {
   const value = String(status || '').toLowerCase();
 
-  if (
-    ['completed', 'converted', 'approved', 'won', 'closed'].includes(value)
-  ) {
+  if (['completed', 'converted', 'approved', 'won', 'closed'].includes(value)) {
     return 'bg-emerald-50 text-emerald-700 border-emerald-100';
   }
 
@@ -39,7 +39,7 @@ const getStatusStyle = (status) => {
   if (
     ['pending', 'drawings pending', 'new', 'not started', 'follow up'].includes(value)
   ) {
-    return 'bg-amber-50 text-amber-700 border-amber-100';
+    return 'bg-slate-50 text-slate-700 border-slate-100';
   }
 
   return 'bg-slate-100 text-slate-600 border-slate-200';
@@ -51,9 +51,7 @@ function StatusBadge({ status, compact = false }) {
   return (
     <span
       className={`inline-flex max-w-full items-center gap-1.5 rounded-full border font-medium ${
-        compact
-          ? 'px-2 py-1 text-[10px]'
-          : 'px-2.5 py-1.5 text-[11px]'
+        compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1.5 text-[11px]'
       } ${getStatusStyle(value)}`}
     >
       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
@@ -106,13 +104,32 @@ function InfoItem({ icon: Icon, label, value }) {
   );
 }
 
-function ProspectCard({ prospect, onView }) {
+function ActionButton({ icon: Icon, label, onClick, variant }) {
+  const styles = {
+    view: 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100',
+    edit: 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
+    delete: 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100',
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition ${styles[variant]}`}
+    >
+      <Icon size={15} />
+    </button>
+  );
+}
+
+function ProspectCard({ prospect, onView, onEdit, onDelete }) {
   const name = getProspectName(prospect);
   const status = getCurrentStatus(prospect);
 
   return (
     <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-brand-200">
-      {/* Header */}
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
           <Building2 size={19} />
@@ -130,7 +147,6 @@ function ProspectCard({ prospect, onView }) {
         </div>
       </div>
 
-      {/* Current status */}
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-2">
         <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
           Current Status
@@ -138,38 +154,16 @@ function ProspectCard({ prospect, onView }) {
         <StatusBadge status={status} compact />
       </div>
 
-      {/* Contact and project details */}
       <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-4 border-t border-slate-100 pt-4 sm:grid-cols-2">
-        <InfoItem
-          icon={UserRound}
-          label="Contact Person"
-          value={prospect.contactPersonName}
-        />
-
-        <InfoItem
-          icon={FileText}
-          label="Mobile"
-          value={prospect.mobileNumber}
-        />
-
-        <InfoItem
-          icon={FileText}
-          label="Email"
-          value={prospect.email}
-        />
-
-        <InfoItem
-          icon={Building2}
-          label="Project"
-          value={prospect.projectName}
-        />
-
+        <InfoItem icon={UserRound} label="Contact Person" value={prospect.contactPersonName} />
+        <InfoItem icon={FileText} label="Mobile" value={prospect.mobileNumber} />
+        <InfoItem icon={FileText} label="Email" value={prospect.email} />
+        <InfoItem icon={Building2} label="Project" value={prospect.projectName} />
         <InfoItem
           icon={MapPin}
           label="Project Location"
           value={prospect.projectLocation || prospect.city}
         />
-
         <InfoItem
           icon={CalendarDays}
           label="Created On"
@@ -177,16 +171,32 @@ function ProspectCard({ prospect, onView }) {
         />
       </div>
 
-      {/* View action */}
-      <div className="mt-4 flex justify-end border-t border-slate-100 pt-3">
-        <button
-          type="button"
-          onClick={() => onView?.(prospect)}
-          className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
-        >
-          <Eye size={14} />
-          View Details
-        </button>
+      {/* Mobile card actions */}
+      <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+        <span className="text-[10px] font-medium text-slate-400">
+          Prospect Actions
+        </span>
+
+        <div className="flex items-center gap-2">
+          <ActionButton
+            icon={Eye}
+            label="View Prospect"
+            variant="view"
+            onClick={() => onView?.(prospect)}
+          />
+          <ActionButton
+            icon={Pencil}
+            label="Edit Prospect"
+            variant="edit"
+            onClick={() => onEdit?.(prospect)}
+          />
+          <ActionButton
+            icon={Trash2}
+            label="Delete Prospect"
+            variant="delete"
+            onClick={() => onDelete?.(prospect)}
+          />
+        </div>
       </div>
     </article>
   );
@@ -200,13 +210,15 @@ export default function ProspectList({
   totalPages = 1,
   totalRecords,
   onView,
+  onEdit,
+  onDelete,
 }) {
   const columns = useMemo(
     () => [
       {
         label: 'PROSPECT / COMPANY',
         field: 'prospectName',
-        width: '19%',
+        width: '17%',
         className: 'text-left',
         render: (prospect) => (
           <div className="min-w-0 max-w-[190px]">
@@ -223,7 +235,7 @@ export default function ProspectList({
       {
         label: 'CONTACT',
         field: 'contactPersonName',
-        width: '15%',
+        width: '16%',
         className: 'text-left',
         render: (prospect) => (
           <div className="min-w-0 max-w-[155px]">
@@ -242,7 +254,7 @@ export default function ProspectList({
       {
         label: 'PROJECT',
         field: 'projectName',
-        width: '16%',
+        width: '17%',
         className: 'text-left',
         render: (prospect) => (
           <div className="min-w-0 max-w-[165px]">
@@ -258,7 +270,7 @@ export default function ProspectList({
       {
         label: 'CURRENT STATUS',
         field: 'currentStage',
-        width: '19%',
+        width: '20%',
         className: 'text-left',
         render: (prospect) => (
           <StatusBadge status={getCurrentStatus(prospect)} />
@@ -267,7 +279,7 @@ export default function ProspectList({
       {
         label: 'CREATED',
         field: 'createdAt',
-        width: '11%',
+        width: '12%',
         className: 'text-left',
         render: (prospect) => (
           <span className="whitespace-nowrap text-xs text-slate-500">
@@ -278,21 +290,33 @@ export default function ProspectList({
       {
         label: 'ACTIONS',
         field: 'actions',
-        width: '7%',
+        width: '18%',
         className: 'text-center',
         render: (prospect) => (
-          <button
-            type="button"
-            onClick={() => onView?.(prospect)}
-            title="View Prospect"
-            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-700 transition hover:bg-blue-100"
-          >
-            <Eye size={15} />
-          </button>
+          <div className="flex items-center justify-center gap-1.5">
+            <ActionButton
+              icon={Eye}
+              label="View Prospect"
+              variant="view"
+              onClick={() => onView?.(prospect)}
+            />
+            <ActionButton
+              icon={Pencil}
+              label="Edit Prospect"
+              variant="edit"
+              onClick={() => onEdit?.(prospect)}
+            />
+            <ActionButton
+              icon={Trash2}
+              label="Delete Prospect"
+              variant="delete"
+              onClick={() => onDelete?.(prospect)}
+            />
+          </div>
         ),
       },
     ],
-    [onView]
+    [onView, onEdit, onDelete]
   );
 
   const recordsCount =
@@ -338,14 +362,13 @@ export default function ProspectList({
               key={prospect.id || prospect.prospectId}
               prospect={prospect}
               onView={onView}
+              onEdit={onEdit}
+              onDelete={onDelete}
             />
           ))
         ) : (
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-12 text-center">
-            <ClipboardList
-              size={30}
-              className="mx-auto text-slate-300"
-            />
+            <ClipboardList size={30} className="mx-auto text-slate-300" />
             <p className="mt-3 text-sm font-semibold text-slate-700">
               No prospects found
             </p>

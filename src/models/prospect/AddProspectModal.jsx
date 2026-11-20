@@ -171,6 +171,8 @@ const handleFileChange = (event) => {
     const formData = new FormData(form);
 
     const prospectPayload = {
+      ...(isEdit && prospect?.id ? { id: prospect.id } : {}),
+
       prospectType: formData.get('prospectType') || '',
       prospectName: formData.get('prospectName')?.trim() || '',
       contactPersonName: formData.get('contactPersonName')?.trim() || '',

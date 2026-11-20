@@ -1,86 +1,139 @@
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { ROUTES } from '../../constants/routePaths';
 
 import ProspectList from '../../components/feature/prospects/ProspectList';
 import AddProspectModal from '@/models/prospect/AddProspectModal';
+import ConfirmationModal from '@/components/common/ConfirmationModal';
 
 export default function ProspectPage() {
+  const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState('list');
   const [showProspectModal, setShowProspectModal] = useState(false);
+  const [selectedProspect, setSelectedProspect] = useState(null);
+  const [prospectToDelete, setProspectToDelete] = useState(null);
 
-    const handleViewProspect = (prospect) => {
-  console.log('Selected Prospect:', prospect);
-};
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Temporary data states until API integration
-const prospects = [
-  {
-    id: 1,
-    prospectId: 'PR-MVT-001',
-    prospectName: 'Silverline Developers',
-    prospectType: 'Builder / Developer',
-    contactPersonName: 'Karan Malhotra',
-    mobileNumber: '+91 98765 42011',
-    email: 'karan@silverline.dev',
-    projectName: 'Silverline Corporate Park',
-    projectLocation: 'Mumbai, Maharashtra',
-    drawingStatus: 'Received',
-    estimationStatus: 'Completed',
-    boqStatus: 'Shared',
-    currentStage: 'Awaiting Prospect Feedback',
-    assignedEmployee: 'Priya Nair',
-    createdAt: '2026-11-10T10:30:00',
-  },
-  {
-    id: 2,
-    prospectId: 'PR-MVT-002',
-    prospectName: 'Nova Manufacturing',
-    prospectType: 'Industrial',
-    contactPersonName: 'Rakesh Pillai',
-    mobileNumber: '+91 98765 74202',
-    email: 'projects@nova.dev',
-    projectName: 'Nova Plant Fire System Upgrade',
-    projectLocation: 'Pune, Maharashtra',
-    drawingStatus: 'Received',
-    estimationStatus: 'In Progress',
-    boqStatus: 'Not Started',
-    currentStage: 'Estimation In Progress',
-    assignedEmployee: 'Vikram Shah',
-    createdAt: '2026-11-12T11:15:00',
-  },
-  {
-    id: 3,
-    prospectId: 'PR-MVT-003',
-    prospectName: 'Axis MEP Consultants',
-    prospectType: 'Consultant',
-    contactPersonName: 'Farah Khan',
-    mobileNumber: '+91 98765 74233',
-    email: 'farah@axis.demo',
-    projectName: 'CityCare Hospital Extension',
-    projectLocation: 'Thane, Maharashtra',
-    drawingStatus: 'Pending',
-    estimationStatus: 'Not Started',
-    boqStatus: 'Not Started',
-    currentStage: 'Drawings Pending',
-    assignedEmployee: 'Priya Nair',
-    createdAt: '2026-11-15T14:20:00',
-  },
-];
+  // Temporary data until API integration
+  const [prospects, setProspects] = useState([
+    {
+      id: 1,
+      prospectId: 'PR-MVT-001',
+      prospectName: 'Silverline Developers',
+      prospectType: 'Builder / Developer',
+      contactPersonName: 'Karan Malhotra',
+      mobileNumber: '9876542011',
+      email: 'karan@silverline.dev',
+      projectName: 'Silverline Corporate Park',
+      projectLocation: 'Mumbai, Maharashtra',
+      currentStage: 'Awaiting Prospect Feedback',
+      createdAt: '2026-11-10T10:30:00',
+    },
+    {
+      id: 2,
+      prospectId: 'PR-MVT-002',
+      prospectName: 'Nova Manufacturing',
+      prospectType: 'Company',
+      contactPersonName: 'Rakesh Pillai',
+      mobileNumber: '9876574202',
+      email: 'projects@nova.dev',
+      projectName: 'Nova Plant Fire System Upgrade',
+      projectLocation: 'Pune, Maharashtra',
+      currentStage: 'Estimation In Progress',
+      createdAt: '2026-11-12T11:15:00',
+    },
+    {
+      id: 3,
+      prospectId: 'PR-MVT-003',
+      prospectName: 'Axis MEP Consultants',
+      prospectType: 'Consultant',
+      contactPersonName: 'Farah Khan',
+      mobileNumber: '9876574233',
+      email: 'farah@axis.demo',
+      projectName: 'CityCare Hospital Extension',
+      projectLocation: 'Thane, Maharashtra',
+      currentStage: 'Drawings Pending',
+      createdAt: '2026-11-15T14:20:00',
+    },
+  ]);
 
-const loading = false;
-const totalRecords = prospects.length;
-const totalPages = Math.ceil(totalRecords / 10);
+  const loading = false;
+  const totalRecords = prospects.length;
+  const totalPages = Math.ceil(totalRecords / 10);
 
-  const handleAddProspect = async (prospectData) => {
-    // Prospect creation API will be integrated here.
-    console.log('Prospect Form Data:', prospectData);
+  // View prospect
+  const handleViewProspect = (prospect) => {
+    navigate(
+      ROUTES.PROSPECTSDETAILS.replace(':id', prospect.id),
+      {
+        state: { prospect },
+      }
+    );
+  };
 
-    // Keep the modal open until the API is integrated.
-    return false;
+  // Open Add modal
+  const handleOpenAddModal = () => {
+    setSelectedProspect(null);
+    setShowProspectModal(true);
+  };
+
+  // Open Edit modal
+  const handleEditProspect = (prospect) => {
+    setSelectedProspect(prospect);
+    setShowProspectModal(true);
+  };
+
+  // Close Add/Edit modal
+  const handleCloseProspectModal = () => {
+    setShowProspectModal(false);
+    setSelectedProspect(null);
+  };
+
+  // Add / Update prospect
+  const handleSaveProspect = async (prospectData) => {
+    if (selectedProspect) {
+      console.log('Update Prospect:', prospectData);
+
+      // Update API will be integrated here.
+      // Temporary local update:
+      setProspects((previous) =>
+        previous.map((item) =>
+          item.id === selectedProspect.id
+            ? { ...item, ...prospectData }
+            : item
+        )
+      );
+    } else {
+      console.log('Add Prospect:', prospectData);
+
+      // Add API will be integrated here.
+    }
+
+    handleCloseProspectModal();
+    return true;
+  };
+
+  // Open Delete Confirmation
+  const handleDeleteClick = (prospect) => {
+    setProspectToDelete(prospect);
+  };
+
+  // Delete confirmation
+  const handleDeleteProspect = () => {
+    if (!prospectToDelete) return;
+
+    console.log('Delete Prospect ID:', prospectToDelete.id);
+
+    // Delete API will be integrated here.
+    setProspects((previous) =>
+      previous.filter((item) => item.id !== prospectToDelete.id)
+    );
+
+    setProspectToDelete(null);
   };
 
   const tabs = [
@@ -88,8 +141,6 @@ const totalPages = Math.ceil(totalRecords / 10);
       id: 'list',
       label: 'All Prospects',
     },
-    // Add more tabs here later.
-    // Example: Details, Converted Clients, etc.
   ];
 
   const tabContent = {
@@ -102,33 +153,29 @@ const totalPages = Math.ceil(totalRecords / 10);
         totalPages={totalPages}
         totalRecords={totalRecords}
         onView={handleViewProspect}
+        onEdit={handleEditProspect}
+        onDelete={handleDeleteClick}
       />
     ),
   };
-
-
 
   return (
     <section className="w-full space-y-5 pb-6">
       {/* Page Header */}
       <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-brand-600">
-            Sales & Project Management
-          </p>
-
           <h1 className="mt-1 text-2xl font-semibold text-slate-900">
             Prospect Management
           </h1>
 
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+          <p className="text-xs text-slate-500 sm:text-sm">
             Manage prospects, contact information and initial project details.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => setShowProspectModal(true)}
+          onClick={handleOpenAddModal}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700"
         >
           <Plus size={17} />
@@ -163,11 +210,27 @@ const totalPages = Math.ceil(totalRecords / 10);
       {/* Active Tab Content */}
       {tabContent[activeTab]}
 
-      {/* Add Prospect Modal */}
+      {/* Add / Edit Prospect Modal */}
       <AddProspectModal
         open={showProspectModal}
-        onClose={() => setShowProspectModal(false)}
-        onSubmit={handleAddProspect}
+        onClose={handleCloseProspectModal}
+        onSubmit={handleSaveProspect}
+        prospect={selectedProspect}
+        isEdit={Boolean(selectedProspect)}
+      />
+
+      {/* Delete Confirmation */}
+      <ConfirmationModal
+        open={Boolean(prospectToDelete)}
+        onClose={() => setProspectToDelete(null)}
+        onConfirm={handleDeleteProspect}
+        title="Delete Prospect"
+        message={`Are you sure you want to delete "${
+          prospectToDelete?.prospectName || 'this prospect'
+        }"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
       />
     </section>
   );
