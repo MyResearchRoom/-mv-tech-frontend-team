@@ -20,6 +20,7 @@ import {
 } from '@/components/common/FormFields';
 import CompanyService from '../../services/companyService';
 import { handleViewDocument } from '../../utils/viewDocument';
+import GSTService from '../../services/gstService';
 
 export const companyTypes = [
   'Private Limited',
@@ -33,17 +34,84 @@ export const companyTypes = [
 
 const states = [
   'Andhra Pradesh',
+  'Arunachal Pradesh',
+  'Assam',
+  'Bihar',
+  'Chhattisgarh',
+  'Goa',
+  'Haryana',
+  'Himachal Pradesh',
+  'Jharkhand',
+  'Manipur',
+  'Meghalaya',
+  'Mizoram',
+  'Nagaland',
+  'Odisha',
+  'Punjab',
+  'Rajasthan',
+  'Sikkim',
   'Delhi',
   'Gujarat',
   'Karnataka',
   'Kerala',
   'Maharashtra',
+  'Madhya Pradesh',
+  'Tripura',
   'Tamil Nadu',
   'Telangana',
   'Uttar Pradesh',
+  'Uttarakhand',
   'West Bengal',
+  'Andaman and Nicobar Islands',
+  'Chandigarh',
+  'Dadra and Nagar Haveli and Daman and Diu',
+  'Jammu and Kashmir',
+  'Ladakh',
+  'Lakshadweep',
+  'Puducherry',
   'Other',
 ];
+
+const gstStateCodes = {
+  '01': 'Jammu and Kashmir',
+  '02': 'Himachal Pradesh',
+  '03': 'Punjab',
+  '04': 'Chandigarh',
+  '05': 'Uttarakhand',
+  '06': 'Haryana',
+  '07': 'Delhi',
+  '08': 'Rajasthan',
+  '09': 'Uttar Pradesh',
+  '10': 'Bihar',
+  '11': 'Sikkim',
+  '12': 'Arunachal Pradesh',
+  '13': 'Nagaland',
+  '14': 'Manipur',
+  '15': 'Mizoram',
+  '16': 'Tripura',
+  '17': 'Meghalaya',
+  '18': 'Assam',
+  '19': 'West Bengal',
+  '20': 'Jharkhand',
+  '21': 'Odisha',
+  '22': 'Chhattisgarh',
+  '23': 'Madhya Pradesh',
+  '24': 'Gujarat',
+  '25': 'Dadra and Nagar Haveli and Daman and Diu',
+  '26': 'Dadra and Nagar Haveli and Daman and Diu',
+  '27': 'Maharashtra',
+  '28': 'Andhra Pradesh',
+  '29': 'Karnataka',
+  '30': 'Goa',
+  '31': 'Lakshadweep',
+  '32': 'Kerala',
+  '33': 'Tamil Nadu',
+  '34': 'Puducherry',
+  '35': 'Andaman and Nicobar Islands',
+  '36': 'Telangana',
+  '37': 'Andhra Pradesh',
+  '38': 'Ladakh',
+};
 
 const currencies = ['INR — Indian Rupee', 'USD — US Dollar'];
 
@@ -301,6 +369,7 @@ export default function AddCompanyModal({ companyId = null }) {
   const [country, setCountry] = useState('India');
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState('');
+  const [gstLoading, setGstLoading] = useState({});
 
   const notifyError = (message) => {
     setError(message);
@@ -484,6 +553,129 @@ export default function AddCompanyModal({ companyId = null }) {
         ? prev.filter((item) => item.id !== id)
         : prev
     );
+  };
+
+  const handleFetchGST = async (index, registrationId) => {
+    const gstinField = formRef.current?.elements.namedItem(
+      `gstin${index + 1}`
+    );
+
+    const gstin = gstinField?.value?.trim().toUpperCase();
+
+    if (!gstin) {
+      notifyError("Please enter GSTIN first.");
+      return;
+    }
+
+    const gstinRegex =
+      /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+
+    if (!gstinRegex.test(gstin)) {
+      notifyError("Please enter a valid 15-character GSTIN.");
+      return;
+    }
+
+    try {
+      setGstLoading((prev) => ({
+        ...prev,
+        [registrationId]: true,
+      }));
+
+      setError("");
+
+      const response = await GSTService.fetchGSTDetails(gstin);
+
+      if (!response?.success || !response?.data) {
+        throw new Error(response?.message || "GST details not found.");
+      }
+
+      const gst = response.data;
+      const state =
+        gst.addressDetails?.state ||
+        gst.state ||
+        gstStateCodes[String(gst.stateCode || '').padStart(2, '0')] ||
+        '';
+      const addressDetails = gst.addressDetails || {};
+      const address =
+        (typeof gst.address === 'string' && gst.address.trim()) ||
+        [
+          addressDetails.building_name,
+          addressDetails.building_num,
+          addressDetails.street,
+          addressDetails.locality,
+          gst.city,
+          state,
+          gst.pincode || gst.pinCode,
+        ]
+          .filter(Boolean)
+          .join(', ');
+      const gstStatus =
+        gst.status?.toLowerCase() === 'active'
+          ? 'Registered'
+          : 'Unregistered';
+      const gstValues = {
+        gstStatus,
+        gstType: gst.taxpayerType || '',
+        gstin: gst.gstin || gstin,
+        registrationState: state,
+        registrationAddress: address,
+        placeOfSupply: state,
+      };
+
+      setRegistrations((prev) =>
+        prev.map((registration) =>
+          registration.id === registrationId
+            ? {
+                ...registration,
+                values: {
+                  ...registration.values,
+                  ...gstValues,
+                },
+              }
+            : registration
+        )
+      );
+
+      const formValues = {
+        companyName: gst.tradeName,
+        legalName: gst.legalName,
+        pan: gst.pan,
+        state,
+        city: gst.city,
+        pinCode: gst.pincode || gst.pinCode,
+        registeredAddress: address,
+        ...Object.fromEntries(
+          Object.entries(gstValues).map(([field, value]) => [
+            `${field}${index + 1}`,
+            value,
+          ])
+        ),
+      };
+
+      Object.entries(formValues).forEach(([name, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        const field = formRef.current?.elements.namedItem(name);
+        if (field && 'value' in field) field.value = value;
+      });
+
+      dispatch(
+        showToast({
+          type: "success",
+          message: "GST details fetched successfully.",
+        })
+      );
+    } catch (requestError) {
+      notifyError(
+        requestError.response?.data?.message ||
+          requestError.message ||
+          "Unable to fetch GST details."
+      );
+    } finally {
+      setGstLoading((prev) => ({
+        ...prev,
+        [registrationId]: false,
+      }));
+    }
   };
 
   const handleDocumentChange = (id, file) => {
@@ -1072,6 +1264,43 @@ export default function AddCompanyModal({ companyId = null }) {
 
                     {/* GST Fields */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                      <Field>
+                          <FormInput
+                            label="GSTIN"
+                            name={`gstin${index + 1}`}
+                            placeholder="Enter GSTIN"
+                            maxLength={15}
+                            pattern="[0-9]{2}[A-Za-z]{5}[0-9]{4}[A-Za-z][1-9A-Za-z]Z[0-9A-Za-z]"
+                            title="Enter a valid 15-character GSTIN"
+                          />
+
+                      </Field>
+
+                      <Field>
+                        <button
+                            type="button"
+                            onClick={() =>
+                              handleFetchGST(index, registration.id)
+                            }
+                            disabled={Boolean(gstLoading[registration.id])}
+                            className="flex bottom-0 w-full items-center justify-center gap-2 rounded-lg
+                              bg-brand-600 px-3 py-3 text-sm font-semibold text-white
+                              transition hover:bg-brand-700 sm:mt-5
+                              disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {gstLoading[registration.id] ? (
+                              <>
+                                <span className="h-4 w-4 animate-spin rounded-full border-2
+                                  border-white border-t-transparent" />
+                                Fetching GST Details...
+                              </>
+                            ) : (
+                              "Fetch GST Details"
+                            )}
+                        </button>
+                      </Field>
+
                       <Field>
                         <FormSelect
                           label="GST Registration Status"
@@ -1117,16 +1346,6 @@ export default function AddCompanyModal({ companyId = null }) {
                       </Field>
 
                       <Field>
-                        <FormInput
-                          label="GSTIN"
-                          name={`gstin${index + 1}`}
-                          placeholder="Enter GSTIN"
-                          pattern="[0-9]{2}[A-Za-z]{5}[0-9]{4}[A-Za-z][1-9A-Za-z]Z[0-9A-Za-z]"
-                          title="Enter a valid 15-character GSTIN"
-                        />
-                      </Field>
-
-                      <Field>
                         <FormSelect
                           label="State"
                           name={`registrationState${index + 1}`}
@@ -1134,11 +1353,18 @@ export default function AddCompanyModal({ companyId = null }) {
                         />
                       </Field>
 
-                      <Field>
-                        <FormInput
+                      <Field span>
+                        {/* <FormInput
                           label="Registration Address"
                           name={`registrationAddress${index + 1}`}
                           placeholder="Enter Registration Address"
+                        /> */}
+
+                        <FormTextarea
+                          label="Registration Address"
+                          name={`registrationAddress${index + 1}`}
+                          placeholder="Enter Registration Address"
+                          rows={2}
                         />
                       </Field>
                     </div>
