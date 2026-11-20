@@ -1,5 +1,4 @@
 
-import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Pencil,
@@ -9,9 +8,7 @@ import {
 } from 'lucide-react';
 
 import ProspectDetailsTabs from '@/components/feature/prospects/ProspectDetailsTabs';
-import { useNavigate, useParams } from 'react-router-dom';
-import ProspectService from '@/services/prospectService';
-import { getStatusStyle } from '../../components/feature/prospects/ProspectList';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 
 const getDisplayValue = (value, fallback = '—') => {
   if (value === undefined || value === null || value === '') return fallback;
@@ -46,51 +43,14 @@ export default function ProspectDetailsPage({
   prospect: prospectProp,
   onBack,
   onEdit,
+  onViewDrawings,
   onConvert,
 }) {
+  const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
-  const [prospect, setProspect] = useState(prospectProp || null);
-  const [loading, setLoading] = useState(!prospectProp);
-  const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
 
-  useEffect(() => {
-    if (prospectProp) {
-      setProspect(prospectProp);
-      setLoading(false);
-      setError('');
-      return undefined;
-    }
-
-    let isCurrentRequest = true;
-    setProspect(null);
-    setLoading(true);
-    setError('');
-
-    const fetchProspect = async () => {
-      try {
-        const result = await ProspectService.getProspectById(id);
-        if (isCurrentRequest) setProspect(result);
-      } catch (requestError) {
-        if (isCurrentRequest) {
-          setError(
-            requestError.response?.data?.message ||
-              requestError.message ||
-              'Unable to load prospect details.'
-          );
-        }
-      } finally {
-        if (isCurrentRequest) setLoading(false);
-      }
-    };
-
-    fetchProspect();
-
-    return () => {
-      isCurrentRequest = false;
-    };
-  }, [id, prospectProp, retryCount]);
+  const prospect = prospectProp || location.state?.prospect;
 
   const handleBack = () => {
     if (onBack) {
@@ -99,17 +59,6 @@ export default function ProspectDetailsPage({
       navigate('/prospects');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 px-4 pt-3 pb-6 sm:px-6">
-        <div className="mx-auto max-w-3xl animate-pulse rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="h-5 w-48 rounded bg-slate-200" />
-          <div className="mt-4 h-4 w-full max-w-md rounded bg-slate-100" />
-        </div>
-      </div>
-    );
-  }
 
   if (!prospect) {
     return (
@@ -120,18 +69,8 @@ export default function ProspectDetailsPage({
           </h2>
 
           <p className="mt-2 text-sm text-slate-500">
-            {error || `No prospect data was found for ID: ${id || '—'}.`}
+            No prospect data was found for ID: {id || '—'}.
           </p>
-
-          {error && (
-            <button
-              type="button"
-              onClick={() => setRetryCount((count) => count + 1)}
-              className="mt-4 font-semibold text-brand-700 underline underline-offset-2"
-            >
-              Retry
-            </button>
-          )}
 
           <button
             type="button"
@@ -162,30 +101,33 @@ export default function ProspectDetailsPage({
     : prospect.id || id;
 
   return (
-    <div className="min-h-screen bg-slate-50 p-2 pb-5">
+    <div className="min-h-screen bg-slate-50 px-3 pt-2 pb-5 sm:px-5 sm:pt-3 lg:px-8">
       <div className="mx-auto max-w-[1500px] space-y-3">
 
         {/* Back Button */}
         <button
           type="button"
           onClick={handleBack}
-          className="inline-flex items-center gap-2 pb-1 text-sm font-semibold text-brand-700 transition hover:text-brand-800"
+          className="inline-flex items-center gap-2 py-1 text-sm font-semibold text-brand-700 transition hover:text-brand-800"
         >
           <ArrowLeft size={18} />
           Back to prospects
         </button>
 
-
+        {/* Prospect Header Card */}
         <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-sm">
 
-          <div className="p-3 sm:p-3 lg:p-4">
+          <div className="p-4 sm:p-5 lg:p-6">
             <div className="flex flex-col gap-5">
 
               {/* Prospect Information */}
-              <div className="flex flex-col md:flex-row min-w-0 items-start  gap-3 md:gap-4">
+              <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-sm font-bold text-brand-700 sm:h-14 sm:w-14">
+                  {prospectNumber || '—'}
+                </div>
 
                 <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
+                  <div className="mb-1.5 flex flex-wrap items-center gap-2">
                     <span className="text-xs font-semibold text-brand-700">
                       {getDisplayValue(prospect.prospectId)}
                     </span>
@@ -201,7 +143,7 @@ export default function ProspectDetailsPage({
                     {prospectName}
                   </h1>
 
-                  <div className=" flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
+                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
                     {prospect.projectName && (
                       <span className="break-words font-medium text-slate-600">
                         {prospect.projectName}
@@ -219,31 +161,10 @@ export default function ProspectDetailsPage({
                     )}
                   </div>
                 </div>
-
-                <div className="flex flex-row gap-2 sm:flex-wrap sm:items-center">
-
-                  <button
-                    type="button"
-                    onClick={() => onEdit?.(prospect)}
-                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 md:px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 w-auto"
-                  >
-                    <Pencil size={16} />
-                    Edit 
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => onConvert?.(prospect)}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 md:px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 sm:ml-auto sm:w-auto"
-                  >
-                    <BadgeCheck size={16} />
-                    Convert to Client
-                  </button>
-                </div>
               </div>
 
-
-              <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 sm:grid-cols-2 p-2">
+              {/* Created Date and Status */}
+              <div className="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 sm:grid-cols-2 sm:p-4">
 
                 <div className="flex min-w-0 items-center gap-3">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm">
@@ -266,14 +187,44 @@ export default function ProspectDetailsPage({
                       Current Status
                     </p>
 
-                    <span className={`mt-1.5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold border  ${getStatusStyle(prospectStatus)}`}>
+                    <span className="mt-1.5 inline-flex max-w-full items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
                       <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-blue-600" />
-                      <span className={`break-words`} >{prospectStatus.replace(/_/g, ' ')}</span>
+                      <span className="break-words">{prospectStatus}</span>
                     </span>
                   </div>
                 </div>
               </div>
 
+              {/* Actions */}
+              <div className="flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:flex-wrap sm:items-center">
+
+                <button
+                  type="button"
+                  onClick={() => onEdit?.(prospect)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+                >
+                  <Pencil size={16} />
+                  Edit Prospect
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onViewDrawings?.(prospect)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+                >
+                  <Upload size={16} />
+                  Drawings
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onConvert?.(prospect)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 sm:ml-auto sm:w-auto"
+                >
+                  <BadgeCheck size={16} />
+                  Convert to Client
+                </button>
+              </div>
             </div>
           </div>
 

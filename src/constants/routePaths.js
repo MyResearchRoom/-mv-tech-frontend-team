@@ -2,8 +2,11 @@
 export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
+
   PROSPECTS: '/prospects',
+  PROSPECTSDETAILS: '/prospects/:id',
   PROSPECT_NEW: '/prospects/new',
+
   CLIENTS: '/clients',
   PROJECTS: '/projects',
   DESIGN_DRAWINGS: '/design-drawings',
