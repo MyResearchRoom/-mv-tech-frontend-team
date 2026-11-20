@@ -2,6 +2,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { useDispatch } from 'react-redux';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { ROUTES } from '../../constants/routePaths';
 
 import ProspectList from '../../components/feature/prospects/ProspectList';
@@ -234,4 +238,5 @@ export default function ProspectPage() {
       />
     </section>
   );
+
 }
