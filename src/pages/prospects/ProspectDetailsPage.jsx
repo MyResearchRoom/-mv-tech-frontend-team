@@ -11,6 +11,7 @@ import {
 import ProspectDetailsTabs from '@/components/feature/prospects/ProspectDetailsTabs';
 import { useNavigate, useParams } from 'react-router-dom';
 import ProspectService from '@/services/prospectService';
+import AddProspectModal from '@/models/prospect/AddProspectModal';
 import { getStatusStyle } from '../../components/feature/prospects/ProspectList';
 
 const getDisplayValue = (value, fallback = '—') => {
@@ -54,6 +55,7 @@ export default function ProspectDetailsPage({
   const [loading, setLoading] = useState(!prospectProp);
   const [error, setError] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (prospectProp) {
@@ -100,6 +102,25 @@ export default function ProspectDetailsPage({
     }
   };
 
+  const handleEditProspect = () => {
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+  };
+
+  const handleSaveProspect = async () => {
+    try {
+      const updatedProspect = await ProspectService.getProspectById(
+        prospect.id || id
+      );
+      setProspect(updatedProspect);
+    } catch {
+      setRetryCount((count) => count + 1);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 px-4 pt-3 pb-6 sm:px-6">
@@ -114,7 +135,7 @@ export default function ProspectDetailsPage({
   if (!prospect) {
     return (
       <div className="min-h-screen bg-slate-50 px-4 pt-3 pb-6 sm:px-6">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <div className="flex flex-col mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">
             Prospect details not available
           </h2>
@@ -136,7 +157,7 @@ export default function ProspectDetailsPage({
           <button
             type="button"
             onClick={handleBack}
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+            className="mt-5 inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 w-auto"
           >
             <ArrowLeft size={16} />
             Back to Prospects
@@ -224,7 +245,13 @@ export default function ProspectDetailsPage({
 
                   <button
                     type="button"
-                    onClick={() => onEdit?.(prospect)}
+                    onClick={() => {
+                      if (onEdit) {
+                        onEdit(prospect);
+                      } else {
+                        handleEditProspect();
+                      }
+                    }}
                     className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 md:px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 w-auto"
                   >
                     <Pencil size={16} />
@@ -283,6 +310,14 @@ export default function ProspectDetailsPage({
           </div>
         </div>
       </div>
+
+      <AddProspectModal
+        open={showEditModal}
+        onClose={handleCloseEditModal}
+        onSubmit={handleSaveProspect}
+        prospect={prospect}
+        isEdit
+      />
     </div>
   );
 }

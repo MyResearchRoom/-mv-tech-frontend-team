@@ -962,6 +962,8 @@ export default function AddProspectModal({
 
         setProspect({
           ...data,
+          id: data.id || initialProspect.id,
+          projectId: project.id,
 
           // Basic prospect details
           prospectType: data.prospectType || '',

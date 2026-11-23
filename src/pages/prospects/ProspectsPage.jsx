@@ -1,9 +1,3 @@
-import ModulePlaceholder from '@/components/common/ModulePlaceholder';
-
-<<<<<<< Updated upstream
-export default function ProspectsPage() {
-  return <ModulePlaceholder title="Prospects" description="Projects in enquiry, estimation, BOQ and quotation stages." />;
-=======
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -32,7 +26,6 @@ export default function ProspectPage() {
       ROUTES.PROSPECTSDETAILS.replace(':id', encodeURIComponent(prospect.id))
     );
   };
-
 
   const handleOpenAddModal = () => {
     setSelectedProspect(null);
@@ -182,5 +175,4 @@ export default function ProspectPage() {
       />
     </section>
   );
->>>>>>> Stashed changes
 }
