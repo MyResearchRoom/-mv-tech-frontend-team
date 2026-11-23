@@ -1,81 +1,149 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7202bda354fee86d5ef7704630254563f5378be8
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { useDispatch } from 'react-redux';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { ROUTES } from '../../constants/routePaths';
 
 import ProspectList from '../../components/feature/prospects/ProspectList';
 import AddProspectModal from '@/models/prospect/AddProspectModal';
 import ConfirmationModal from '@/components/common/ConfirmationModal';
-import ProspectService from '@/services/prospectService';
-import { showToast } from '@/store/slices/uiSlice';
 
 export default function ProspectPage() {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
 
   const [activeTab, setActiveTab] = useState('list');
   const [showProspectModal, setShowProspectModal] = useState(false);
   const [selectedProspect, setSelectedProspect] = useState(null);
   const [prospectToDelete, setProspectToDelete] = useState(null);
-  const [isDeletingProspect, setIsDeletingProspect] = useState(false);
-  const [listRefreshKey, setListRefreshKey] = useState(0);
 
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Temporary data until API integration
+  const [prospects, setProspects] = useState([
+    {
+      id: 1,
+      prospectId: 'PR-MVT-001',
+      prospectName: 'Silverline Developers',
+      prospectType: 'Builder / Developer',
+      contactPersonName: 'Karan Malhotra',
+      mobileNumber: '9876542011',
+      email: 'karan@silverline.dev',
+      projectName: 'Silverline Corporate Park',
+      projectLocation: 'Mumbai, Maharashtra',
+      currentStage: 'Awaiting Prospect Feedback',
+      createdAt: '2026-11-10T10:30:00',
+    },
+    {
+      id: 2,
+      prospectId: 'PR-MVT-002',
+      prospectName: 'Nova Manufacturing',
+      prospectType: 'Company',
+      contactPersonName: 'Rakesh Pillai',
+      mobileNumber: '9876574202',
+      email: 'projects@nova.dev',
+      projectName: 'Nova Plant Fire System Upgrade',
+      projectLocation: 'Pune, Maharashtra',
+      currentStage: 'Estimation In Progress',
+      createdAt: '2026-11-12T11:15:00',
+    },
+    {
+      id: 3,
+      prospectId: 'PR-MVT-003',
+      prospectName: 'Axis MEP Consultants',
+      prospectType: 'Consultant',
+      contactPersonName: 'Farah Khan',
+      mobileNumber: '9876574233',
+      email: 'farah@axis.demo',
+      projectName: 'CityCare Hospital Extension',
+      projectLocation: 'Thane, Maharashtra',
+      currentStage: 'Drawings Pending',
+      createdAt: '2026-11-15T14:20:00',
+    },
+  ]);
+
+  const loading = false;
+  const totalRecords = prospects.length;
+  const totalPages = Math.ceil(totalRecords / 10);
+
+  // View prospect
   const handleViewProspect = (prospect) => {
     navigate(
-      ROUTES.PROSPECTSDETAILS.replace(':id', encodeURIComponent(prospect.id))
+      ROUTES.PROSPECTSDETAILS.replace(':id', prospect.id),
+      {
+        state: { prospect },
+      }
     );
   };
 
+<<<<<<< HEAD
+=======
+  // Open Add modal
+>>>>>>> 7202bda354fee86d5ef7704630254563f5378be8
   const handleOpenAddModal = () => {
     setSelectedProspect(null);
     setShowProspectModal(true);
   };
 
+  // Open Edit modal
   const handleEditProspect = (prospect) => {
     setSelectedProspect(prospect);
     setShowProspectModal(true);
   };
 
-
+  // Close Add/Edit modal
   const handleCloseProspectModal = () => {
     setShowProspectModal(false);
     setSelectedProspect(null);
   };
 
-  const handleSaveProspect = async () => {
+  // Add / Update prospect
+  const handleSaveProspect = async (prospectData) => {
+    if (selectedProspect) {
+      console.log('Update Prospect:', prospectData);
+
+      // Update API will be integrated here.
+      // Temporary local update:
+      setProspects((previous) =>
+        previous.map((item) =>
+          item.id === selectedProspect.id
+            ? { ...item, ...prospectData }
+            : item
+        )
+      );
+    } else {
+      console.log('Add Prospect:', prospectData);
+
+      // Add API will be integrated here.
+    }
+
     handleCloseProspectModal();
-    setListRefreshKey((key) => key + 1);
     return true;
   };
 
+  // Open Delete Confirmation
   const handleDeleteClick = (prospect) => {
     setProspectToDelete(prospect);
   };
 
-  const handleDeleteProspect = async () => {
+  // Delete confirmation
+  const handleDeleteProspect = () => {
     if (!prospectToDelete) return;
 
-    try {
-      setIsDeletingProspect(true);
-      const result = await ProspectService.deleteProspect(prospectToDelete.id);
-      dispatch(showToast({
-        type: 'success',
-        message: result?.message || 'Prospect deleted successfully.',
-      }));
-      setProspectToDelete(null);
-      setListRefreshKey((key) => key + 1);
-    } catch (requestError) {
-      dispatch(showToast({
-        type: 'error',
-        message:
-          requestError.response?.data?.message ||
-          requestError.message ||
-          'Unable to delete prospect.',
-      }));
-    } finally {
-      setIsDeletingProspect(false);
-    }
+    console.log('Delete Prospect ID:', prospectToDelete.id);
+
+    // Delete API will be integrated here.
+    setProspects((previous) =>
+      previous.filter((item) => item.id !== prospectToDelete.id)
+    );
+
+    setProspectToDelete(null);
   };
 
   const tabs = [
@@ -88,10 +156,15 @@ export default function ProspectPage() {
   const tabContent = {
     list: (
       <ProspectList
+        prospects={prospects}
+        loading={loading}
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
+        totalPages={totalPages}
+        totalRecords={totalRecords}
         onView={handleViewProspect}
         onEdit={handleEditProspect}
         onDelete={handleDeleteClick}
-        refreshKey={listRefreshKey}
       />
     ),
   };
@@ -144,10 +217,10 @@ export default function ProspectPage() {
         </div>
       </div>
 
-  
+      {/* Active Tab Content */}
       {tabContent[activeTab]}
 
-
+      {/* Add / Edit Prospect Modal */}
       <AddProspectModal
         open={showProspectModal}
         onClose={handleCloseProspectModal}
@@ -156,23 +229,23 @@ export default function ProspectPage() {
         isEdit={Boolean(selectedProspect)}
       />
 
+      {/* Delete Confirmation */}
       <ConfirmationModal
         open={Boolean(prospectToDelete)}
-        onClose={() => {
-          if (!isDeletingProspect) setProspectToDelete(null);
-        }}
+        onClose={() => setProspectToDelete(null)}
         onConfirm={handleDeleteProspect}
         title="Delete Prospect"
         message={`Are you sure you want to delete "${
           prospectToDelete?.prospectName || 'this prospect'
-        }" "${
-          prospectToDelete?.prospectCode || 'this prospect'
         }"? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
-        isLoading={isDeletingProspect}
         variant="danger"
       />
     </section>
   );
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7202bda354fee86d5ef7704630254563f5378be8
 }
