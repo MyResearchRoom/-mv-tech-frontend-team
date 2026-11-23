@@ -24,6 +24,7 @@ import SettingsPage from '@/pages/settings/SettingsPage';
 import NotFoundPage from '@/pages/NotFoundPage';
 import ProspectDetailsPage from './pages/prospects/ProspectDetailsPage';
 
+
 export default function App() {
   return (
     <>
@@ -38,7 +39,7 @@ export default function App() {
             <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
 
             <Route path={ROUTES.PROSPECTS} element={<ProspectsPage />} />
-             <Route path={ROUTES.PROSPECTSDETAILS} element={<ProspectDetailsPage />} />
+            <Route path={ROUTES.PROSPECTSDETAILS} element={<ProspectDetailsPage />} />
             <Route path={ROUTES.PROSPECT_NEW} element={<OnboardClientPage />} />
             <Route path={ROUTES.CLIENTS} element={<ClientsPage />} />
             <Route path={ROUTES.PROJECTS} element={<ProjectsPage />} />

@@ -87,6 +87,7 @@ export default function ProspectProspectTab({ prospect = {} }) {
     { key: 'projectType', label: 'Project Type', value: prospect.projectType },
     { key: 'projectLocation', label: 'Project Location', value: prospect.projectLocation },
     { key: 'projectStatus', label: 'Project Status', value: prospect.projectStatus },
+    { key: 'builtUpArea', label: 'Approximate Built-up Area', value: prospect.builtUpArea },
     { key: 'buildingsTowers', label: 'Buildings / Towers', value: prospect.buildingsTowers },
     { key: 'floors', label: 'Floors', value: prospect.floors },
     { key: 'basements', label: 'Basements', value: prospect.basements },
