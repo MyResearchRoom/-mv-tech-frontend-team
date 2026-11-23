@@ -1,4 +1,7 @@
+<<<<<<< HEAD
+=======
 
+>>>>>>> 7202bda354fee86d5ef7704630254563f5378be8
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -79,7 +82,10 @@ export default function ProspectPage() {
     );
   };
 
+<<<<<<< HEAD
+=======
   // Open Add modal
+>>>>>>> 7202bda354fee86d5ef7704630254563f5378be8
   const handleOpenAddModal = () => {
     setSelectedProspect(null);
     setShowProspectModal(true);
@@ -238,5 +244,8 @@ export default function ProspectPage() {
       />
     </section>
   );
+<<<<<<< HEAD
+=======
 
+>>>>>>> 7202bda354fee86d5ef7704630254563f5378be8
 }

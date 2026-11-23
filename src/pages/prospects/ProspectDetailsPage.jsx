@@ -8,7 +8,10 @@ import {
 } from 'lucide-react';
 
 import ProspectDetailsTabs from '@/components/feature/prospects/ProspectDetailsTabs';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
+import ProspectService from '@/services/prospectService';
+import AddProspectModal from '@/models/prospect/AddProspectModal';
+import { getStatusStyle } from '../../components/feature/prospects/ProspectList';
 
 const getDisplayValue = (value, fallback = '—') => {
   if (value === undefined || value === null || value === '') return fallback;
@@ -49,8 +52,48 @@ export default function ProspectDetailsPage({
   const location = useLocation();
   const navigate = useNavigate();
   const { id } = useParams();
+  const [prospect, setProspect] = useState(prospectProp || null);
+  const [loading, setLoading] = useState(!prospectProp);
+  const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [showEditModal, setShowEditModal] = useState(false);
 
-  const prospect = prospectProp || location.state?.prospect;
+  useEffect(() => {
+    if (prospectProp) {
+      setProspect(prospectProp);
+      setLoading(false);
+      setError('');
+      return undefined;
+    }
+
+    let isCurrentRequest = true;
+    setProspect(null);
+    setLoading(true);
+    setError('');
+
+    const fetchProspect = async () => {
+      try {
+        const result = await ProspectService.getProspectById(id);
+        if (isCurrentRequest) setProspect(result);
+      } catch (requestError) {
+        if (isCurrentRequest) {
+          setError(
+            requestError.response?.data?.message ||
+              requestError.message ||
+              'Unable to load prospect details.'
+          );
+        }
+      } finally {
+        if (isCurrentRequest) setLoading(false);
+      }
+    };
+
+    fetchProspect();
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [id, prospectProp, retryCount]);
 
   const handleBack = () => {
     if (onBack) {
@@ -60,10 +103,40 @@ export default function ProspectDetailsPage({
     }
   };
 
+  const handleEditProspect = () => {
+    setShowEditModal(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+  };
+
+  const handleSaveProspect = async () => {
+    try {
+      const updatedProspect = await ProspectService.getProspectById(
+        prospect.id || id
+      );
+      setProspect(updatedProspect);
+    } catch {
+      setRetryCount((count) => count + 1);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4 pt-3 pb-6 sm:px-6">
+        <div className="mx-auto max-w-3xl animate-pulse rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="h-5 w-48 rounded bg-slate-200" />
+          <div className="mt-4 h-4 w-full max-w-md rounded bg-slate-100" />
+        </div>
+      </div>
+    );
+  }
+
   if (!prospect) {
     return (
       <div className="min-h-screen bg-slate-50 px-4 pt-3 pb-6 sm:px-6">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+        <div className="flex flex-col mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
           <h2 className="text-lg font-semibold text-slate-900">
             Prospect details not available
           </h2>
@@ -75,7 +148,7 @@ export default function ProspectDetailsPage({
           <button
             type="button"
             onClick={handleBack}
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+            className="mt-5 inline-flex items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 w-auto"
           >
             <ArrowLeft size={16} />
             Back to Prospects
@@ -161,6 +234,33 @@ export default function ProspectDetailsPage({
                     )}
                   </div>
                 </div>
+
+                <div className="flex flex-row gap-2 sm:flex-wrap sm:items-center">
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onEdit) {
+                        onEdit(prospect);
+                      } else {
+                        handleEditProspect();
+                      }
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 px-3 md:px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 w-auto"
+                  >
+                    <Pencil size={16} />
+                    Edit 
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onConvert?.(prospect)}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 md:px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-brand-700 sm:ml-auto sm:w-auto"
+                  >
+                    <BadgeCheck size={16} />
+                    Convert to Client
+                  </button>
+                </div>
               </div>
 
               {/* Created Date and Status */}
@@ -234,6 +334,14 @@ export default function ProspectDetailsPage({
           </div>
         </div>
       </div>
+
+      <AddProspectModal
+        open={showEditModal}
+        onClose={handleCloseEditModal}
+        onSubmit={handleSaveProspect}
+        prospect={prospect}
+        isEdit
+      />
     </div>
   );
 }

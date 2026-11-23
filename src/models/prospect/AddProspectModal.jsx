@@ -122,12 +122,94 @@ export default function AddProspectModal({
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   useEffect(() => {
-    if (open) {
-      setError('');
-      setIsSubmitting(false);
-      setSelectedFiles([]);
+    if (!open) return;
+
+    setProspect(initialProspect);
+    setExistingDocuments([]);
+    setSelectedFiles([]);
+    setIsSubmitting(false);
+    setGstLoading(false);
+
+    if (!isEdit || !initialProspect?.id) {
+      setIsFetchingProspect(false);
+      return;
     }
-  }, [open, prospect?.id]);
+
+    let isMounted = true;
+
+    const fetchProspect = async () => {
+      try {
+        setIsFetchingProspect(true);
+
+        const response = await ProspectService.getProspectByIdForEdit(
+          initialProspect.id
+        );
+
+        if (!response?.success || !response?.data) {
+          throw new Error(
+            getApiResponseMessage(response, 'Unable to fetch prospect details.')
+          );
+        }
+
+        const data = response.data;
+
+        const project = Array.isArray(data.project)
+          ? data.project[0] || {}
+          : data.project || {};
+
+        if (!isMounted) return;
+
+        setProspect({
+          ...data,
+          id: data.id || initialProspect.id,
+          projectId: project.id,
+
+          // Basic prospect details
+          prospectType: data.prospectType || '',
+          prospectName: data.companyName || data.prospectName || '',
+          contactPersonName: data.contactPerson || data.contactPersonName || '',
+          mobileNumber: data.mobile || data.mobileNumber || '',
+
+          // Project details
+          projectName: project.projectName || '',
+          projectType: project.projectType || '',
+          projectLocation: project.projectLocation || '',
+          projectStatus: project.projectStatus || '',
+          builtUpArea: project.builtUpArea ?? '',
+          buildingsTowers: project.towers ?? project.buildingsTowers ?? '',
+          floors: project.floors ?? '',
+          basements: project.basements ?? '',
+          siteAddress: project.siteAddress || '',
+          expectedTimeline: project.expectedTimeline || '',
+          governingFireAuthority:
+            project.fireAuthority || project.governingFireAuthority || '',
+          fireSafetyRequirements:
+            project.fireRequirements || project.fireSafetyRequirements || '',
+        });
+
+        setExistingDocuments(data.documents || []);
+      } catch (fetchError) {
+        if (isMounted) {
+          notifyError(
+            getApiResponseMessage(
+              fetchError?.response?.data,
+              fetchError?.message || 'Unable to fetch prospect details.'
+            )
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsFetchingProspect(false);
+        }
+      }
+    };
+
+    fetchProspect();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [open, initialProspect?.id, isEdit]);
 
   if (!open) return null;
 
